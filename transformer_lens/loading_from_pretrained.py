@@ -2099,7 +2099,7 @@ def convert_mixtral_weights(mixtral, cfg: HookedTransformerConfig):
         # w1 -> W_gate
         # w2 -> W_out
         # w3 -> W_in
-        # See https://github.com/mistralai/mistral-src/blob/main/mistral/model.py#L128 for reference
+        # See https://github.com/mistralai/mistral-inference/blob/78efe38d7ec8a76f136789ff9c4ceeb01700cfdf/src/mistral_inference/model.py#L148 for reference
         for e in range(cfg.num_experts):
             state_dict[f"blocks.{l}.mlp.experts.{e}.W_in"] = (
                 mixtral.model.layers[l].block_sparse_moe.experts[e].w3.weight.T
