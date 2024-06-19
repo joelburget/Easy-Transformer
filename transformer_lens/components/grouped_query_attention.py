@@ -2,7 +2,7 @@ from typing import Dict, Tuple, Union
 
 import torch
 import torch.nn as nn
-from fancy_einsum import einsum
+import torch.nn.functional as F
 from jaxtyping import Float
 
 from transformer_lens.components import AbstractAttention
@@ -117,38 +117,15 @@ class GroupedQueryAttention(AbstractAttention):
         Tuple[Float[torch.Tensor, "batch pos head_index d_head"], Float[torch.Tensor, "batch pos kv_head_index d_head"], Float[torch.Tensor, "batch pos kv_head_index d_head"]]:
         A tuple containing the Q, K, and V matrices with the specified shapes.
         """
-        if self.cfg.use_split_qkv_input or self.cfg.use_attn_in:
-            kv_einops_string = "batch pos kv_head_index d_model"
-            q_einops_string = "batch pos head_index d_model"
-        else:
-            kv_einops_string = q_einops_string = "batch pos d_model"
 
         q = self.hook_q(
-            einsum(
-                f"{q_einops_string}, head_index d_model d_head \
-                -> batch pos head_index d_head",
-                query_input,
-                self.W_Q,
-            )
-            + self.b_Q
+            F.linear(query_input, self.W_Q, self.b_Q),
         )  # [batch, pos, head_index, d_head]
         k = self.hook_k(
-            einsum(
-                f"{kv_einops_string}, kv_head_index d_model d_head \
-                -> batch pos kv_head_index d_head",
-                key_input,
-                self._W_K,
-            )
-            + self._b_K
+            F.linear(key_input, self.W_K, self.b_K),
         )  # [batch, pos, head_index, d_head]
         v = self.hook_v(
-            einsum(
-                f"{kv_einops_string}, kv_head_index d_model d_head \
-                -> batch pos kv_head_index d_head",
-                value_input,
-                self._W_V,
-            )
-            + self._b_V
+            F.linear(value_input, self.W_V, self.b_V),
         )  # [batch, pos, head_index, d_head]
         return q, k, v
 

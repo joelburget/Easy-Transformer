@@ -267,18 +267,7 @@ class AbstractAttention(ABC, nn.Module):
                 )
                 +self.b_O
             else:
-                out = (
-                    (
-                        einsum(
-                            "batch pos head_index d_head, \
-                                head_index d_head d_model -> \
-                                batch pos d_model",
-                            z,
-                            self.W_O,
-                        )
-                    )
-                    + self.b_O
-                )  # [batch, pos, d_model]
+                out = F.linear(z, self.W_O, self.b_O)  # [batch, pos, d_model]
         else:
             # Explicitly calculate the attention result so it can be accessed by a hook
             # This is off by default because it can easily eat through your GPU memory.
@@ -349,13 +338,7 @@ class AbstractAttention(ABC, nn.Module):
             )
         else:
             q = self.hook_q(
-                einsum(
-                    f"{qkv_einops_string}, head_index d_model d_head \
-                    -> batch pos head_index d_head",
-                    query_input,
-                    self.W_Q,
-                )
-                + self.b_Q
+                F.linear(query_input, self.W_Q, self.b_Q)
             )  # [batch, pos, head_index, d_head]
         if self.cfg.load_in_4bit:
             if not isinstance(self.W_K, Params4bit):
@@ -374,13 +357,7 @@ class AbstractAttention(ABC, nn.Module):
             )
         else:
             k = self.hook_k(
-                einsum(
-                    f"{qkv_einops_string}, head_index d_model d_head \
-                    -> batch pos head_index d_head",
-                    key_input,
-                    self.W_K,
-                )
-                + self.b_K
+                F.linear(key_input, self.W_K, self.b_K)
             )  # [batch, pos, head_index, d_head]
 
         if self.cfg.load_in_4bit:
@@ -403,13 +380,7 @@ class AbstractAttention(ABC, nn.Module):
             )
         else:
             v = self.hook_v(
-                einsum(
-                    f"{qkv_einops_string}, head_index d_model d_head \
-                    -> batch pos head_index d_head",
-                    value_input,
-                    self.W_V,
-                )
-                + self.b_V
+                F.linear(value_input, self.W_V, self.b_V)
             )  # [batch, pos, head_index, d_head]
         return q, k, v
 
