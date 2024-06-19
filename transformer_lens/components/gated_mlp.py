@@ -14,7 +14,8 @@ from transformers.utils import is_bitsandbytes_available
 from transformer_lens.components import LayerNorm, LayerNormPre
 from transformer_lens.hook_points import HookPoint
 from transformer_lens.HookedTransformerConfig import HookedTransformerConfig
-from transformer_lens.utils import addmm, gelu_fast, gelu_new, solu
+from transformer_lens.utils import gelu_fast, gelu_new, solu
+from transformer_lens.utilities.addmm import batch_addmm
 
 if is_bitsandbytes_available():
     import bitsandbytes as bnb
@@ -133,4 +134,4 @@ class GatedMLP(nn.Module):
                 post_act, self.W_out.t(), bias=None, quant_state=self.W_out.quant_state
             )
         else:
-            return addmm(self.b_out, self.W_out, post_act)
+            return batch_addmm(self.b_out, self.W_out, post_act)
